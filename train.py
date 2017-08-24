@@ -10,7 +10,7 @@ import numpy as np
 from sklearn import cross_validation as cs
 from sklearn.externals import joblib
 
-from icofeature import cutPictures, getBinayPix
+from icofeature import segment, imgTransfer, getBinayPix
 
 PROJECT_HOME = os.path.abspath('.')
 DATA_HOME = os.path.join(PROJECT_HOME, 'input/ico3')
@@ -21,6 +21,14 @@ train_data_file = DATA_HOME + '/train_data.txt'
 out_cut_dirs = os.path.abspath('.') + '/output/ico3/cut'
 
 PKL = os.path.abspath('.') + '/model/ico.pkl'
+
+
+def cutPictures(img, dest_dir):
+    im = imgTransfer(img)
+    pics = segment(im)
+    for index, pic in enumerate(pics):
+        path = dest_dir + '/%s.jpg'%(index)
+        pic.save(path, 'jpeg')
 
 def load_data():
     dataset = np.loadtxt(train_data_file, dtype=str, delimiter=',')
@@ -49,15 +57,18 @@ def predict(captcha):
     clf = joblib.load(PKL)
     cutPictures(captcha, out_cut_dirs)
 
-    digits = []
+    words = []
 
-    for im in os.listdir(out_cut_dirs):
-        print im
+    #for im in os.listdir(out_cut_dirs):
+    for index in range(4):
+        im = '%s.jpg'%(index)
         path = os.path.join(out_cut_dirs, im)
         binary = getBinayPix(path)
         feature = np.array(binary).reshape(1, -1)
-        print 'word is: ', clf.predict(feature)
-        #os.remove(path)
+        words.append(clf.predict(feature)[0])
+        os.remove(path)
+
+    return ''.join(words)
 
 
 if __name__ == '__main__':
